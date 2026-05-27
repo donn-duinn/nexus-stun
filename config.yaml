@@ -1,0 +1,119 @@
+# Nexus VPN - Tech Duinn Swarm Mesh Configuration
+# Pre-configured for 4-node cluster
+
+node_name: dagda  # Override per-node with --node flag or NEXUS_NODE env var
+
+wireguard:
+  interface: nexus0
+  listen_port: 51820
+  mtu: 1420
+  # Private key auto-generated on first run, stored in key file
+  key_dir: /etc/nexus-vpn/keys
+
+stun:
+  servers:
+    - stun.l.google.com:19302
+    - stun1.l.google.com:19302
+    - stun.cloudflare.com:3478
+  # Self-hosted STUN server (optional)
+  # listen_addr: "0.0.0.0:3478"
+  refresh_interval: 30s
+
+relay:
+  listen_addr: "0.0.0.0:41642"
+  tls:
+    cert_file: /etc/nexus-vpn/tls/relay.crt
+    key_file: /etc/nexus-vpn/tls/relay.key
+    ca_file: /etc/nexus-vpn/tls/ca.crt
+  # Fallback to relay if direct connection fails after this duration
+  fallback_timeout: 10s
+
+mqtt:
+  broker: "tcp://dagda:1883"
+  topic_prefix: "nexus-vpn"
+  client_id: "nexus-vpn-dagda"  # Override per-node
+  heartbeat_interval: 15s
+  username: ""  # Set via NEXUS_MQTT_USER env var
+  password: ""  # Set via NEXUS_MQTT_PASS env var
+
+dns:
+  listen_addr: "0.0.0.0:5353"
+  domain: "nexus.local"
+  upstream:
+    - "1.1.1.1:53"
+    - "8.8.8.8:53"
+  cache_ttl: 300
+
+dashboard:
+  listen_addr: "0.0.0.0:8443"
+  tls:
+    cert_file: /etc/nexus-vpn/tls/dashboard.crt
+    key_file: /etc/nexus-vpn/tls/dashboard.key
+  # Set password via NEXUS_DASHBOARD_PASS env var
+  password: ""
+
+crypto:
+  # Noise Protocol settings (like Headscale)
+  protocol: "Noise_XX_25519_ChaChaPoly_SHA256"
+  # Pre-shared key for initial bootstrap (rotated after Noise handshake)
+  psk: ""  # Set via NEXUS_PSK env var
+
+# Pre-configured peers (all 4 swarm nodes)
+peers:
+  dagda:
+    name: dagda
+    public_key: ""  # Auto-populated on first run
+    allowed_ips:
+      - "100.64.0.1/32"
+    endpoint: ""  # Discovered via STUN/MQTT
+    tailscale_fallback: "100.122.7.47:51820"
+    keepalive: 25s
+    role: "master"
+    hardware:
+      gpu: true
+      ram_gb: 16
+      cpu: "Ryzen 5"
+
+  brigid:
+    name: brigid
+    public_key: ""
+    allowed_ips:
+      - "100.64.0.2/32"
+    endpoint: ""
+    tailscale_fallback: "100.109.228.31:51820"
+    keepalive: 25s
+    role: "media-hub"
+    hardware:
+      gpu: false
+      ram_gb: 7
+      cpu: "ARM"
+
+  cernunnos:
+    name: cernunnos
+    public_key: ""
+    allowed_ips:
+      - "100.64.0.3/32"
+    endpoint: ""
+    tailscale_fallback: "100.89.31.123:51820"
+    keepalive: 25s
+    role: "storage-dns"
+    hardware:
+      gpu: false
+      ram_gb: 4
+      cpu: "Pi4 ARM"
+
+  aengus:
+    name: aengus
+    public_key: ""
+    allowed_ips:
+      - "100.64.0.4/32"
+    endpoint: ""
+    tailscale_fallback: "100.110.164.2:51820"
+    keepalive: 25s
+    role: "mobile"
+    hardware:
+      gpu: false
+      ram_gb: 6
+      cpu: "Exynos"
+    # Mobile node - may be offline frequently
+    optional: true
