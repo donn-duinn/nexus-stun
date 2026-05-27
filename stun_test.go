@@ -555,6 +555,7 @@ func TestXORMappedAddressRoundTrip(t *testing.T) {
 		}
 
 		// Find and decode XOR-MAPPED-ADDRESS.
+		found := false
 		offset := HeaderSize
 		msgLen := int(binary.BigEndian.Uint16(resp[2:4]))
 		end := HeaderSize + msgLen
@@ -562,6 +563,7 @@ func TestXORMappedAddressRoundTrip(t *testing.T) {
 			attrType := binary.BigEndian.Uint16(resp[offset : offset+2])
 			attrLen := int(binary.BigEndian.Uint16(resp[offset+2 : offset+4]))
 			if attrType == attrTypeXORMappedAddress {
+				found = true
 				xorPort := binary.BigEndian.Uint16(resp[offset+6 : offset+8])
 				decodedPort := int(xorPort ^ uint16(MagicCookie>>16))
 				if decodedPort != tc.port {
@@ -576,11 +578,13 @@ func TestXORMappedAddressRoundTrip(t *testing.T) {
 				if !decodedIP.Equal(srcAddr.IP) {
 					t.Errorf("%s:%d: decoded IP = %v", tc.ip, tc.port, decodedIP)
 				}
-				return
+				break
 			}
 			offset += 4 + attrLen + (4-attrLen%4)%4
 		}
-		t.Errorf("%s:%d: XOR-MAPPED-ADDRESS not found", tc.ip, tc.port)
+		if !found {
+			t.Errorf("%s:%d: XOR-MAPPED-ADDRESS not found", tc.ip, tc.port)
+		}
 	}
 }
 

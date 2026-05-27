@@ -12,6 +12,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -110,8 +111,5 @@ func listenUDP(addr *net.UDPAddr) (*net.UDPConn, error) {
 
 // isClosedError checks if an error is due to a closed connection.
 func isClosedError(err error) bool {
-	if opErr, ok := err.(*net.OpError); ok {
-		return opErr.Err.Error() == "use of closed network connection"
-	}
-	return false
+	return errors.Is(err, net.ErrClosed)
 }
